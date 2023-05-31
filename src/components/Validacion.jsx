@@ -5,14 +5,16 @@ import { gestorLlamada } from "../data/classes";
 export const Validacion = ({ validacion, index, respuestas }) => {
   const [validado, isValidado] = useState(null);
 
-  const tomarRespuesta = () => {
+  const esRespuestaCorrecta = () => {
     isValidado(null);
 
     setTimeout(() => {
-      if (gestorLlamada._validacionesCorrectas[index]) {
+      if (gestorLlamada._respuestaCliente[index]._esCorrecta) {
         isValidado(true);
+        gestorLlamada._validacionesCorrectas[index]=true
       } else {
         isValidado(false);
+        gestorLlamada._validacionesCorrectas[index]=false
       }
     }, 200); // Esperar 200 milisegundos (0.2 segundos)
   };
@@ -20,7 +22,7 @@ export const Validacion = ({ validacion, index, respuestas }) => {
   return (
     <div key={index} className="validacion-item">
       <div>
-        <label>Pregunta :</label>
+        <label>Pregunta: </label>
         <p>{validacion.nombre}</p>
         <OpcionesValidaciones options={respuestas[index]} id={index} />
         {validado === true ? (
@@ -30,7 +32,7 @@ export const Validacion = ({ validacion, index, respuestas }) => {
           <span className="rechazado">Cliente no validado</span>
         ) : null}
       </div>
-      <button type="button" onClick={() => tomarRespuesta()}>
+      <button type="button" onClick={() => esRespuestaCorrecta()}>
         Corroborar
       </button>
     </div>

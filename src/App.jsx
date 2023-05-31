@@ -2,51 +2,61 @@ import React, { useEffect, useState } from "react";
 import "./styles.css";
 import Swal from "sweetalert2";
 
-import {
-  gestorLlamada,
-  estados,
-  llamadaIdentificada,
-  categorias,
-  acciones
-} from "./data/classes";
+import { gestorLlamada } from "./data/classes";
 import { Validacion } from "./components/Validacion";
 import { Acciones } from "./components/Acciones";
-
 
 export const App = () => {
   const [operador, isOperador] = useState(false);
   const [descOp, setDescOp] = useState("");
   const [accionesSeleccionable, setAccionesSeleccionables] = useState([]);
   const [ejecutado, isEjecutado] = useState(null);
+  const [validacionCompleta, setValidacionCompleta] = useState(false);
 
   const handleDescOp = (event) => {
     const nuevoContenido = event.target.value;
     setDescOp(nuevoContenido);
   };
   //dispara tomarDescripcion cuando se deja de hacer foco al textarea
-  const handleBlur = () => {
+  const tomarDescripcion = () => {
     gestorLlamada.tomarDescripcion(descOp);
-    if (descOp.length > 0){
-      gestorLlamada.obtenerAccionesARealizar(acciones)
+    if (descOp.length > 0) {
+      gestorLlamada.obtenerAccionesARealizar();
       let array = [];
-      for (const accion of acciones) {
-        array.push(accion._descripcion)
+      for (const accion of gestorLlamada.acciones) {
+        array.push(accion._descripcion);
       }
-      setAccionesSeleccionables(array)
+      setAccionesSeleccionables(array);
     }
   };
 
-  const confirmarAccion = () => {
+  // Sirve para habilitar el boton
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (gestorLlamada._validacionesCorrectas.length > 0){
+        const todosSonTrue = gestorLlamada._validacionesCorrectas.every(elemento => elemento === true);
+        setValidacionCompleta(todosSonTrue);
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+  const tomarConfirmacion = () => {
     gestorLlamada.tomarConfirmacion();
-    isEjecutado(null)
+
+    //Y aca cambia la condicion para que se dispare el informarSituacion()
+    isEjecutado(null);
     setTimeout(() => {
-      if(gestorLlamada._accionSeleccionada){
+      if (gestorLlamada._accionSeleccionada) {
         isEjecutado(true);
-      }else{
+      } else {
         isEjecutado(false);
       }
     }, 200); // Esperar 200 milisegundos (0.2 segundos)
-  }
+  };
 
   //obtiene las posibles respuestas del de las validaciones obtenidas desde la memoria interna del gestor
   const respuestas = [];
@@ -63,7 +73,7 @@ export const App = () => {
   const frontCancelarLlamada = (event) => {
     event.preventDefault();
     gestorLlamada.llamadaColgada();
-    console.log(gestorLlamada.llamada)
+    console.log(gestorLlamada.llamada);
     Swal.fire({
       icon: "error",
       title: "Llamada cancelada",
@@ -93,10 +103,8 @@ export const App = () => {
   };
 
   //Busca la llamada simulando que proviene de otro caso de uso y establece los datos del gestor
-  const frontComunicarseOperador = () => {
-    gestorLlamada.llamada = llamadaIdentificada;
-    gestorLlamada.llamarCURegistrarLlamada(estados);
-    gestorLlamada.obtenerDatosDeLlamada(categorias);
+  const simularCasoUsoUno = () => {
+    gestorLlamada.opcionComunicarseOperador();
     isOperador(true);
   };
 
@@ -109,6 +117,9 @@ export const App = () => {
             null;
           }}
         >
+          {/* Muestra los datos de la llamada cuando el gestor los tiene en atributos
+          Es decir no tiene un metodo como tal, pero luego de "GestorLlamada.obtenerDatosDeLaLlamada()"
+          Se muestran automaticamente. */}
           <div className="datosLlamada">
             <h2>Datos de la llamada</h2>
             <div className="nombre_cliente">
@@ -134,9 +145,13 @@ export const App = () => {
               ) : null}
             </div>
           </div>
+
           <div className="validaciones">
             <h3>Validaciones</h3>
             <div>
+              {/* Muestra las validaciones con sus opcionValidacion cuando el gestor los tiene en atributo
+              Es decir no tiene un metodo como tal, pero luego de "GestorLlamada.obtenerDatosDeLaLlamada()"
+              Se muestran automaticamente. */}
               {gestorLlamada.validaciones &&
                 respuestas.length >= 0 &&
                 gestorLlamada.validaciones.map((validacion, index) => (
@@ -144,7 +159,7 @@ export const App = () => {
                     key={index}
                     validacion={validacion}
                     index={index}
-                    respuestas={respuestas}
+                    respuestas={respuestas} //en realidad de hago referencia las opcionesValidacion
                   />
                 ))}
             </div>
@@ -156,7 +171,7 @@ export const App = () => {
               rows={4}
               value={descOp}
               onChange={handleDescOp}
-              onBlur={handleBlur}
+              onBlur={tomarDescripcion}
             />
           </div>
 
@@ -165,7 +180,11 @@ export const App = () => {
             <div>
               <div>
                 <label>Seleccione una accion :</label>
-                {gestorLlamada.acciones ? (<Acciones acciones={accionesSeleccionable}/>) : null}
+                {/* Mas de lo mismo, muestras las acciones cuando estan en el gestor */}
+                {gestorLlamada.acciones ? (
+                  <Acciones acciones={accionesSeleccionable} />
+                ) : null}
+                {/* Y Aca informa la situacion */}
                 {ejecutado === true ? (
                   <p className="validado">Accion ejecutada con exito!</p>
                 ) : null}
@@ -173,7 +192,14 @@ export const App = () => {
                   <p className="rechazado">No se pudo ejecutar la accion</p>
                 ) : null}
               </div>
-              <button type="button" className="enviarAccion"onClick={confirmarAccion}>Confirmar</button>
+              <button
+                type="button"
+                className="enviarAccion"
+                disabled={!validacionCompleta}
+                onClick={tomarConfirmacion}
+              >
+                Confirmar
+              </button>
             </div>
             <br />
           </div>
@@ -192,7 +218,7 @@ export const App = () => {
   } else {
     return (
       <div className="main">
-        <button onClick={frontComunicarseOperador}>
+        <button onClick={simularCasoUsoUno}>
           Simular ejecucion metodo disparador opcionComunicarseOperador()
         </button>
       </div>

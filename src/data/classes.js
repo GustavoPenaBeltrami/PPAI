@@ -1,21 +1,20 @@
-//Declaracion de clases
 const getFechaHoraActual = () => {
     const fecha = new Date(); // Aquí se asume que ya tienes un objeto Date
-
+    
     const dia = fecha.getDate().toString().padStart(2, '0'); // Obtener día con dos dígitos
     const mes = (fecha.getMonth() + 1).toString().padStart(2, '0'); // Obtener mes con dos dígitos (se suma 1 ya que los meses se cuentan desde 0)
     const año = fecha.getFullYear().toString(); // Obtener año
-
+    
     const hora = fecha.getHours().toString().padStart(2, '0'); // Obtener hora con dos dígitos
     const minutos = fecha.getMinutes().toString().padStart(2, '0'); // Obtener minutos con dos dígitos
     const segundos = fecha.getSeconds().toString().padStart(2, '0'); // Obtener segundos con dos dígitos
-
+    
     const fechaFormateada = `${dia}/${mes}/${año} ${hora}:${minutos}:${segundos}`;
-
+    
     return fechaFormateada;
 }
 
-
+//Declaracion de clases
 class OpcionValidacion {
     constructor(nombre, esCorrecta) {
         this._nombre = nombre;
@@ -51,11 +50,14 @@ class OpcionValidacion {
     }
 }
 class Validacion {
-    constructor(nombre, opcionValidacion, opcionCorrecta) {
+    constructor(nombre, opcionValidacion) {
         this._nombre = nombre;
         this._opcionValidacion = opcionValidacion;
     }
     get nombre() {
+        return this._nombre;
+    }
+    getNombre() {
         return this._nombre;
     }
     get opcionValidacion() {
@@ -75,7 +77,7 @@ class Validacion {
     set opcionValidacion(nuevaOpcionValidacion) {
         this._opcionValidacion = nuevaOpcionValidacion;
     }
-    esMiOpcion(respuesta) {
+    buscarOpciones(respuesta) {
         for (const opcion of this._opcionValidacion) {
             if (opcion.esMiOpcion(respuesta)) {
                 return opcion
@@ -83,7 +85,7 @@ class Validacion {
         }
         return null
     }
-    esOpcionCorrecta() {
+    buscarOpcionCorrecta() {
         for (const opcion of this._opcionValidacion) {
             if (opcion.esOpcionCorrecta()) {
                 return opcion
@@ -91,21 +93,31 @@ class Validacion {
         }
         return null
     }
-    esIgualRespuesta(correcta, respuesta) {
+    validarRespuesta(correcta, respuesta) {
         if (correcta === respuesta) {
             return true
         } else {
             return false
         }
     }
+    esValidacion(miValidacion){
+        if(miValidacion === this){
+            this.getNombre();
+            return true
+        }
+        return false
+    }
 }
 class SubOpcionLlamada {
     constructor(nombre, validacion) {
         this._nombre = nombre;
-        this._validacion = validacion;
+        this._validacion = validacion; //a pesar que diga "validacion" pueden ser mas de 1
 
     }
     get nombre() {
+        return this._nombre;
+    }
+    getNombre() {
         return this._nombre;
     }
     get validacion() {
@@ -126,7 +138,21 @@ class SubOpcionLlamada {
         this._validacion = nuevaValidacion;
     }
     obtenerValidacion() {
-        return this._validacion
+        this.getNombre() //Es para dejar en claro en el diagrama que obtenemos el puntero en memoria
+        const validacionesIdentificadas = []
+        //comienza el loop del * en "esValidacion()", el metodo de la clase validacion
+        for (const miValidacion of this._validacion) {
+            for (const validacion of validaciones) {
+                if (validacion.esValidacion(miValidacion)){
+                    validacionesIdentificadas.push(miValidacion)
+                }
+            }
+        }
+
+        return {
+            subopcionIdentificada : this,
+            validacionIdentificada : validacionesIdentificadas
+        }
     }
 }
 class CategoriaLlamada {
@@ -136,6 +162,9 @@ class CategoriaLlamada {
     }
 
     get nombre() {
+        return this._nombre;
+    }
+    getNombre() {
         return this._nombre;
     }
 
@@ -164,12 +193,14 @@ class CategoriaLlamada {
         this._opcionLlamada.push(opcionLlamada);
     }
 
-    soyDeTuCategoria(opcion) {
+    esCategoria(opcion) {
         for (const opcionLlamada of this._opcionesLlamada) {
             if (opcionLlamada.nombre === opcion.nombre) {
-                return this;
+                this.getNombre() // Lo mismo que antes, en el diagrama con esto es suficiente pero en javascript necesito el objeto entero
+                return this; //el objeto entero en sí
             }
         }
+        return null;
     }
 }
 class OpcionLlamada {
@@ -179,6 +210,9 @@ class OpcionLlamada {
         this._validacion = validacion;
     }
     get nombre() {
+        return this._nombre;
+    }
+    getNombre() {
         return this._nombre;
     }
     get subOpcionLlamada() {
@@ -206,12 +240,16 @@ class OpcionLlamada {
     }
 
     obtenerCategoria(categorias) {
+        this.getNombre() //Es para dejar en claro en el diagrama que obtenemos el puntero en memoria
+        
+        //comienza el loop del * en "esCategoria()", el metodo de la clase categoria
+        //que retorna la categoria que cumpla la condicion de corte
         for (const categoria of categorias) {
-            const categoriaPertenece = categoria.soyDeTuCategoria(this);
+            const categoriaPertenece = categoria.esCategoria(this); //En caso de encontrarlo retorna el puntero, sino null
             if (categoriaPertenece) {
                 return {
-                    categoriaIdentificada: categoriaPertenece,
-                    opcionIdentificada: this
+                    categoriaIdentificada: categoriaPertenece, //
+                    opcionIdentificada: this //Pero para javascript el puntero se obtiene del objeto completo
                 };
             }
         }
@@ -227,6 +265,9 @@ class Cliente {
         this._codigoPostal = codigoPostal;
     }
     get nombre() {
+        return this._nombre;
+    }
+    getNombre(){
         return this._nombre;
     }
     getDatos() {
@@ -289,7 +330,7 @@ class Accion {
     }
 }
 class CambioEstado {
-    constructor(estado, fechaHoraInicio) {
+    constructor(estado, fechaHoraInicio = null) {
         this._estado = estado;
         this._fechaHoraInicio = fechaHoraInicio
         this._fechaHoraFin = null
@@ -325,7 +366,8 @@ class CambioEstado {
     }
 }
 class Llamada {
-    constructor(cliente, cambioEstado, opcionLlamada = null, subOpcionLlamada = null, fechaHoraInicio = null, accion = null) {
+    constructor(id, cliente, cambioEstado, opcionLlamada = null, subOpcionLlamada = null, fechaHoraInicio = null, accion = null) {
+        this._id = id;
         this._cliente = cliente;
         this._cambioEstado = cambioEstado;
         this._opcionLlamada = opcionLlamada;
@@ -392,34 +434,36 @@ class Llamada {
         return this._duracion;
     }
     crearCambioEstado(estado, fecha) {
-        //con la fecha que obtuvo el gestor, le pido mi cabioEstadoActual que cambie su hora fin
+        //Con la fecha que obtuvo el gestor, le pido mi cabioEstado actual que cambie su hora fin
 
         for (const cambioActual of this._cambioEstado) {
-
-            cambioActual.esCambioDeEstadoActual();
-
             if (cambioActual.esCambioDeEstadoActual()) {
                 cambioActual._fechaHoraFin = fecha
             }
         }
         //Creo el objeto cambioEstado con el estado "enCurso"
-        this._cambioEstado.push(new CambioEstado(estado, fecha));
-        // console.log(this._cambioEstado)
+        const nuevoEstado = new CambioEstado(estado)
+        nuevoEstado.fechaHoraInicio = fecha
+        this._cambioEstado.push(nuevoEstado);
+
+        console.log(this._cambioEstado)
 
     }
     obtenerNombreClienteDeLlamada() {
-        return this._cliente.nombre
+        //dispara el metodo getNombre() de la clase cliente
+        return this._cliente.getNombre()
     }
     obtenerSubOpcionSeleccionada() {
-        const subopcionIdentificada = this._subOpcionLlamada;
-        const validacionIdentificada = this._subOpcionLlamada.obtenerValidacion()
+        const {subopcionIdentificada, validacionIdentificada} = this._subOpcionLlamada.obtenerValidacion()
+
         return {
             subopcionIdentificada,
             validacionIdentificada
         }
 
     }
-    obtenerOpcionYCategorias(categorias) {
+    obtenerOpcionYCategoria() {
+        //disparo el metodo de opcionLlamada, obtenerCategoria, que me devuele tanto la opcion y la categoria
         const { opcionIdentificada, categoriaIdentificada } = this._opcionLlamada.obtenerCategoria(categorias)
         return {
             opcionIdentificada,
@@ -477,16 +521,88 @@ class GestorLlamada {
     }
 
     //Metodos
-    llamadaColgada(){
+    opcionComunicarseOperador(){
+        //Busca la llamada en el CU1 y le cambia el estado a "enCurso"
+        this.llamarCURegistrarLlamada();
+        //Obtiene los datos de la llamda Obtenida
+        this.obtenerDatosDeLlamada();
+    }
+    llamarCURegistrarLlamada() {
+        // Simula que el caso de uso 1 le envia una llamada, pero en realidad crea una que cumpla las condiciones
+        this._llamada = new Llamada(3, cliente2, [cambioEstado6], opcion2, subOpcionOperador, "28/05/2023 16:15:11");
+        //Hace un ciclo for por cada instancia de estado y le ejecuta el metodo .esEnCurso() de la clase Estado y obtiene el puntero de la clase Estado deseada
         for (const estado of estados) {
-            if (estado.esColgada()) {
-                this._estadoColgada = estado
+            if (estado.esEnCurso()) {
+                this._estadoEnCurso = estado
             }
         }
-        this._llamada.calcularDuracion()
+        //Obtiene la fecha actual
         this.obtenerFechaYHoraActual()
-        this._llamada.crearCambioEstado(this._estadoColgada, this._fechaHoraActual)
-    }
+        //Crea una instancia de la clase CambioEstado con el estadoEnCurso y la fechaHoraActual
+        this._llamada.crearCambioEstado(this._estadoEnCurso, this._fechaHoraActual)
+    };
+    obtenerFechaYHoraActual() {
+        this._fechaHoraActual = getFechaHoraActual();
+    };
+    obtenerDatosDeLlamada() {
+        //Le pido a la clase llamada que le pregunte a su cliente cual es su nombre y lo almaceno en mi atributo
+        //En este caso el atributo solo se llama nombreCliente, por ende se guarda el nombre nomas, en caso de querer el cliente
+        //comleto desde el gestor no puedo ir directamente, tendria que recorrer todas las intancais de cliente (solamente en Javascript,
+        //en el diagrama con eso es suficiente para entender).
+        this._nombreCliente = this._llamada.obtenerNombreClienteDeLlamada();
+        //Le pido a la clase llamada que le pregunte a su opcion cual es su categoria y almaceno el puntero
+        //de la opcion y el puntero de la categoria
+        const { opcionIdentificada, categoriaIdentificada } = this._llamada.obtenerOpcionYCategoria()
+        this._opcionLlamada = opcionIdentificada
+        this._categoriaLlamada = categoriaIdentificada
+        //Obtengo la subOpcion seleccionada y sus validaciones(1 como minimo).
+        const { subopcionIdentificada, validacionIdentificada } = this._llamada.obtenerSubOpcionSeleccionada()
+        this._subOpcionLlamada = subopcionIdentificada;
+        this._validaciones = validacionIdentificada;
+        for (const num of validacionIdentificada) {
+            this._validacionesCorrectas.push(false)
+            
+        }
+
+    };
+    tomarRespuesta(respuesta, id) {
+        this._respuestaCliente[id] = respuesta
+        this.validarRespuesta(respuesta, id)
+    };
+    validarRespuesta(respuesta, id) {
+        const validacion = this._validaciones[id].buscarOpciones(respuesta)
+        if (validacion) {
+            this._respuestaCliente[id] = validacion;
+        }
+
+        const correcta = this._validaciones[id].buscarOpcionCorrecta()
+
+        this._validaciones[id].validarRespuesta(correcta, validacion)
+
+
+    };
+    tomarDescripcion(descripcion) {
+        this._descripcionOperador = descripcion;
+        return this._descripcionOperador
+    };
+    obtenerAccionesARealizar() {
+        this._acciones = []
+        for (const accion of acciones) {
+            //Esto equivale a un *obtenerAcciones() ya que obtengo toda la accion de forma interna de las clases de javascript y se almacena en el iterador "accion"
+            //y simplemente lo almaceno en mi atributo acciones del gestor
+            this._acciones.push(accion)
+        }
+    };
+    tomarSeleccionAccion(accionSeleccionada, acciones) {
+        for (const accion of acciones) {
+            if (accionSeleccionada == accion._descripcion) {
+                this._accionSeleccionada = accion
+            }
+        }
+    };
+    tomarConfirmacion() {
+        this._confirmacion = true
+    };
     finalizarLlamada() {
         this._llamada.descripcionOperador = this._descripcionOperador;
         this._llamada.calcularDuracion();
@@ -504,71 +620,16 @@ class GestorLlamada {
         this._llamada.crearCambioEstado(this._estadoFinalizado, this._fechaHoraActual)
 
     };
-    llamarCURegistrarLlamada(estados) {
-
-        //Hace un ciclo for por cada instancia de estado y le ejecuta el metodo .esEnCurso() de la clase Estado y obtiene el puntero de la clase Estado deseada
+    llamadaColgada(){
         for (const estado of estados) {
-            if (estado.esEnCurso()) {
-                this._estadoEnCurso = estado
+            if (estado.esColgada()) {
+                this._estadoColgada = estado
             }
         }
-        //Obtiene la fecha actual
+        this._llamada.calcularDuracion()
         this.obtenerFechaYHoraActual()
-        //Crea una instancia de la clase CambioEstado con el estadoEnCurso y la fechaHoraActual
-        this._llamada.crearCambioEstado(this._estadoEnCurso, this._fechaHoraActual)
-    };
-    obtenerFechaYHoraActual() {
-        this._fechaHoraActual = getFechaHoraActual();
-    };
-    obtenerDatosDeLlamada(categorias) {
-        //le pido a la clase llamada que le pregunte a su cliente cual es su nombre y lo almaceno en mi atributo
-        this._nombreCliente = this._llamada.obtenerNombreClienteDeLlamada();
-        const { opcionIdentificada, categoriaIdentificada } = this._llamada.obtenerOpcionYCategorias(categorias)
-        this._opcionLlamada = opcionIdentificada
-        this._categoriaLlamada = categoriaIdentificada
-        const { subopcionIdentificada, validacionIdentificada } = this._subOpcionLlamada = this._llamada.obtenerSubOpcionSeleccionada()
-        this._subOpcionLlamada = subopcionIdentificada;
-        this._validaciones = validacionIdentificada;
-
-    };
-    obtenerAccionesARealizar(acciones) {
-        this._acciones = []
-        for (const accion of acciones) {
-            //Esto equivale a un *obtenerAcciones() ya que obtengo toda la accion de forma interna de las clases de javascript y se almacena en el iterador "accion"
-            //y simplemente lo almaceno en mi atributo acciones del gestor
-            this._acciones.push(accion)
-        }
-    };
-    tomarConfirmacion() {
-        this._confirmacion = true
-    };
-    tomarDescripcion(descripcion) {
-        this._descripcionOperador = descripcion;
-        return this._descripcionOperador
-    };
-    tomarRespuesta(respuesta, id) {
-        this._respuestaCliente[id] = respuesta
-        this.validarRespuesta(respuesta, id)
-    };
-    tomarSeleccionAccion(accionSeleccionada, acciones) {
-        for (const accion of acciones) {
-            if (accionSeleccionada == accion._descripcion) {
-                this._accionSeleccionada = accion
-            }
-        }
-    };
-    validarRespuesta(respuesta, id) {
-        const validacion = this._validaciones[id].esMiOpcion(respuesta)
-        if (validacion) {
-            this._respuestaCliente[id] = validacion;
-        }
-
-        const correcta = this._validaciones[id].esOpcionCorrecta()
-
-        const esCorrecta = this._validaciones[id].esIgualRespuesta(correcta, validacion)
-
-        this._validacionesCorrectas[id] = esCorrecta
-    };
+        this._llamada.crearCambioEstado(this._estadoColgada, this._fechaHoraActual)
+    }
     getDatos() {
         return Object.keys(this).reduce((atributos, key) => {
             if (key !== 'getDatos') {
@@ -597,7 +658,7 @@ class GestorLlamada {
 }
 
 
-//Informacion
+//DATOS
 
 const cliente1 = new Cliente("Gustavo Peña Beltrami", "19/12/1999", "0", "12345");
 const cliente2 = new Cliente("María López García", "05/07/1985", "2", "54321");
@@ -621,6 +682,7 @@ const accion3 = new Accion("Desbloquear Tarjeta");
 const accion4 = new Accion("Bloquear Tarjeta");
 const accion5 = new Accion("Dar de baja servicio");
 const accion6 = new Accion("Solicitar nueva tarjeta");
+const accion7 = new Accion("accion_de_prueba");
 
 const estado1 = new Estado("Iniciada");
 const estado2 = new Estado("EnCurso");
@@ -657,15 +719,18 @@ const cambioEstado4 = new CambioEstado(estado2, "28/05/2023 11:47", "28/05/2023 
 const cambioEstado5 = new CambioEstado(estado3, " 28/05/2023 11:53");
 const cambioEstado6 = new CambioEstado(estado1, "28/05/2023 16:15:11");
 
-const llamada1 = new Llamada(cliente1, [cambioEstado1, cambioEstado2, cambioEstado3], opcion2, subOpcion1, "28/05/2023 15:23", accion6);
-const llamadaIdentificada = new Llamada(cliente2, [cambioEstado6], opcion2, subOpcionOperador, "28/05/2023 16:15:11");
-const llamada3 = new Llamada(cliente2, [cambioEstado4, cambioEstado5, cambioEstado6], opcion4, subOpcionFin, "28/05/2023 11:53", accion3);
+const llamada1 = new Llamada(1, cliente1, [cambioEstado1, cambioEstado2, cambioEstado3], opcion2, subOpcion1, "28/05/2023 15:23", accion6);
+const llamada2 = new Llamada(3, cliente2, [cambioEstado6], opcion2, subOpcionOperador, "28/05/2023 16:15:11");
+const llamada3 = new Llamada(2, cliente3, [cambioEstado4, cambioEstado5, cambioEstado6], opcion4, subOpcionFin, "28/05/2023 11:53", accion3);
 
 const estados = [estado1, estado2, estado3, estado4];
 const categorias = [categoria1, categoria2, categoria3, categoria4, categoria5];
-const acciones = [accion1, accion2, accion3, accion4, accion5, accion6]
+const acciones = [accion1, accion2, accion3, accion4, accion5, accion6, accion7];
+const validaciones = [validacion1, validacion2, validacion3, validacion4]
 
 const gestorLlamada = new GestorLlamada();
+
+console.log("Llamada inicial",llamada2)
 
 export {
     OpcionValidacion,
@@ -680,9 +745,6 @@ export {
     Llamada,
     GestorLlamada,
 
-    estados,
-    categorias,
-    llamadaIdentificada,
-    gestorLlamada,
-    acciones
+
+    gestorLlamada, //La instancia del GestorLlamada del CU
 }

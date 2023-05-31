@@ -10,6 +10,7 @@ function OpcionesValidaciones({ options, id}) {
 
   const tomarRespuesta = (resp,id) => {
     gestorLlamada.tomarRespuesta(resp,id)
+    console.log(gestorLlamada.getDatos())
   }
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { gestorLlamada, acciones as arrayObj } from '../data/classes';
+import { gestorLlamada} from '../data/classes';
 
 export const Acciones = ({acciones}) => {
 
@@ -10,7 +10,7 @@ export const Acciones = ({acciones}) => {
       };
 
       const tomarSeleccionAccion = (accionSeleccionada) =>{
-        gestorLlamada.tomarSeleccionAccion(accionSeleccionada, arrayObj);
+        gestorLlamada.tomarSeleccionAccion(accionSeleccionada, gestorLlamada.acciones);
       }
 
       useEffect(() => {
